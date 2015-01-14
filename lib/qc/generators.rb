@@ -48,7 +48,7 @@ module QC::Generators
     end
 
     def generate
-      generator.generate.send(@method_name, *@args)
+      @generator.generate.send(@method_name, *@args)
     end
   end
 end
