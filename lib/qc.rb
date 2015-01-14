@@ -1,23 +1,29 @@
-require 'rspec'
-
 module QC
   @configuration = {}
 
 
-  class Generator
-    # Just a block for now - could do more stuff later. Maybe make tests reproducible by sourcing a seed from the global config?
-    def initialize(&block)
-      @block = block
-    end
-
-    def generate
-      @block.call
-    end
-  end
-
-
   module Generators
+    module Generator
+      def after(method_name, *args)
+        AfterGenerator.new(self, method_name, args)
+      end
+    end
+
+    class BlockGenerator
+      include Generator
+
+      def initialize(&block)
+        @block = block
+      end
+
+      def generate
+        @block.call
+      end
+    end
+
     class StringGenerator
+      include Generator
+
       def initialize(length, chars, initial_chars = nil)
         @length = length
         # TODO: What should the default be?
@@ -32,6 +38,20 @@ module QC
         string
       end
     end
+
+    class AfterGenerator
+      include Generator
+
+      def initialize(generator, method_name, args)
+        @generator = generator
+        @method_name = method_name
+        @args = args
+      end
+
+      def generate
+        generator.generate.send(@method_name, *@args)
+      end
+    end
   end
 
 
@@ -39,14 +59,14 @@ module QC
     def int(range=1..2**30)
       # Note that giving a range to #int that contains floats will make it behave like #float. Might want to check for
       # that and warn the user that they're doing weird things.
-      Generator.new do
+      BlockGenerator.new do
         Random.rand(range)
       end
     end
 
     def float(range=1.0..2.0**30)
       range = Range.new(range.begin.to_f, range.end.to_f, range.exclude_end?) if range
-      Generator.new do
+      BlockGenerator.new do
         Random.rand(range)
       end
     end
