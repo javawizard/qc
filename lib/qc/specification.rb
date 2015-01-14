@@ -11,10 +11,11 @@ class QC::Specification
   def it(*args, &block)
     generators = @generators
     @spec_class.it *args do
-      # TODO: Make configurable
+      example_group_instance = self
+
       QC.current_config[:iterations].times do
         values = generators.map { |g| g.generate }
-        block.call(*values)
+        example_group_instance.instance_exec(*values, &block)
       end
     end
   end
