@@ -10,11 +10,26 @@ QCMethodCall = Struct.new(:class_name, :method_name, :type) do
   def immediately_equal?(other)
     return other.is_a?(QCMethodCall) && other.class_name == self.class_name && other.method_name == self.method_name && other.type == self.type
   end
+
+  def shallow_equal?(other)
+    return immediately_equal?(other) && other.events.length == self.events.length && events.zip(other.events).all? { |s, o| s.immediately_equal?(o) }
+  end
+
+  def check_equality(other, indent=0)
+    puts "#{' ' * indent}#{class_name}##{method_name} (#{type})"
+    if shallow_equal?(other)
+      events.zip(other.events).select { |s, o| s.is_a? QCMethodCall }.each do |(s, o)|
+        s.check_equality(o, indent + 1)
+      end
+    else
+      puts "#{' '* (indent + 1)}CONTENTS DIFFER"
+    end
+  end
 end
 
 QCEvent = Struct.new(:file, :line) do
   def immediately_equal?(other)
-    return other.is_a?(Event) && other.file == self.file && other.line == self.line
+    return other.is_a?(QCEvent) && other.file == self.file && other.line == self.line
   end
 end
 
